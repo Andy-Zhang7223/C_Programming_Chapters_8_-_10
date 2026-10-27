@@ -1,44 +1,120 @@
 #include <stdio.h>
+#include <string.h>
 
-//NUM_RATES is the amount of items in the array
-#define NUM_RATES ((int) (sizeof(value)/sizeof(value[0])))
-//Initial Balance
-#define INITIAL_BALANCE 100.00
+/*external variables specific to the RPN*/
+int first_value = 0;
+int second_value = 0;
+int total = 0;
+bool valid = true;
 
-int main(void)
-{
-    int i, low_rate,num_years, year;
-    double value[5];
+//This is the code for a stack
+#define STACK_SIZE 100
 
-    printf("Enter interest rate: ");
-    scanf("%d", &low_rate);
-    printf("Enter number of years: ");
-    scanf("%d", &num_years);
+/*external variables*/
+int contents[STACK_SIZE];
+int top = 0;
 
-    printf("\nYears");
-    //This Prints the interest rates on the top of the chart
-    for (i = 0; i < NUM_RATES; i++) {
-        printf("%6d%%", low_rate + i);
-        value[i] = INITIAL_BALANCE;
+void make_empty(void) {
+    top = 0;
+}
+bool is_empty(void) {
+    return top == 0;
+}
+bool is_full(void) {
+    return top == STACK_SIZE;
+}
+void push(int i) {
+    if (is_full()) {
+        printf("Stack is full\n");
     }
-    printf("\n");
+    else {
+        contents[top++] = i;
+    }
+}
+int pop(void) {
+    if (is_empty()) {
+        printf("popped element is empty\n");
+    }
+    else {
+        return contents[--top];
+    }
+}
+//Stack example end
 
-    //This prints the chart itself, doesn't do any calculation that's editable with a simple for loop, tried that
-    //For loop did work, it's just that if you use i in both places it isn't happy. I might be a little silly
-    for (year = 1; year <= num_years; year++) {
-        printf("%3d     ",year);
-        //NUM_RATES is used here to get the other interest rates,
-        //Say the rate is 6%, the loop runs when the interest is 6%
-        //Then the loop runs again with low_rate+i, i = 1, interest rate that loop would be 7%
-        //Continues until all rates have been hit
-        for (i = 0; i < NUM_RATES; i++) {
-            //Calculates the value after interest, Try to repeat this 12 times for 12 months in a year...
-            for (int x = 0; x < 12; x++) {
-                value[i] += (low_rate + i) / 100.00 * value[i];
-            }
-            printf("%7.2f", value[i]);
+int Reverse_Polish_Notation() {
+    char input[201] = "";
+    printf("Please enter an expression: ");
+    fgets(input, sizeof(input), stdin);
+    for (int x = 0; x < strlen(input); x++) {
+        switch (input[x]) {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                push(input[x] - '0');
+                break;
+            case '+':
+                first_value = pop();
+                second_value = pop();
+                total = first_value + second_value;
+                push(total);
+                break;
+            case '-':
+                first_value = pop();
+                second_value = pop();
+                total = second_value - first_value;
+                push(total);
+                break;
+            case '*':
+                first_value = pop();
+                second_value = pop();
+                total = first_value * second_value;
+                push(total);
+                break;
+            case '/':
+                first_value = pop();
+                second_value = pop();
+                total = second_value / first_value;
+                push(total);
+                break;
+            case '=':
+                total = pop();
+                printf("Answer: %d\n",total);
+                first_value = 0;
+                second_value = 0;
+                total = 0;
+                for (int y = 0; y < STACK_SIZE; y++) {
+                    make_empty();
+                }
+                for (int z = 0; z < sizeof(input); z++) {
+                    input[z] = 0;
+                }
+                break;
+            //Note to self: Interestingly enough, after entering a new expression, we add a new line
+            //This works against us as the program will read the empty value and give us 10, which
+            //is the value for a new line and that counts as a non-integer and/or non-operation value.
+            //Thus it just... BREAKS???? So these 3 lines of code guard against that.
+            case ' ':
+            case '\n':
+                break;
+            default: {
+                    printf("Invalid input: %d\n", input[x]);
+                    valid = false;
+                    break;
+                }
         }
-        printf("\n");
+    }
+}
+
+int main(void) {
+    while (valid == true) {
+        Reverse_Polish_Notation();
     }
     return 0;
 }
